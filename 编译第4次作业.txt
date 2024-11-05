@@ -1,0 +1,33 @@
+1. 给定文法
+G(S): S → a|^|(T)
+      T → T,S|S
+写出如下句型的最左归约。
+(1) (a,a)
+(2) (a,(a,a))
+(3) (((a,a),^,(a)),a)
+
+2. 给定文法 
+G(S): S → aAb
+      A → BcA|B 
+      B → idt|ε 
+请分别写出下列句型的句柄。如没有句柄，请说明。
+说明： idt 整体为1个终结符。
+(1) aidtcBcAb
+(2) aidtccb
+(3) ab
+(4) aidtb
+
+
+3. 写出如下文法的LR(0)项目集规范族。
+S → (L) | a
+L → L,S | S 
+
+
+4. 写出如下文法的LR(0)自动机。
+S → SS | (S) | a
+
+5. 试为如下文法构造SLR(1)语法分析表, 要求画出LR(0)自动机。
+bexpr → bexpr or bterm | bterm 
+bterm → bterm and bfactor | bfactor 
+bfactor → not bfactor | ( bexpr ) | true | false 
+说明：bexpr, bterm, 和 bfactor为非终结符，其它符号为终结符。
