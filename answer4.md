@@ -559,9 +559,523 @@ I₄, I₃, I₆ 无进一步转移
 
 - **闭包操作的重要性**：每当项目中的点后面是一个非终结符时，必须将该非终结符的所有产生式以点在最左端的形式加入当前状态，以确保所有可能的推导路径都被考虑到。
 
-感谢您的反馈，希望这个修正能帮助您更好地理解 **LR(0) 自动机** 的构造过程。如有进一步的问题，欢迎继续讨论！
 5. 试为如下文法构造SLR(1)语法分析表, 要求画出LR(0)自动机。
 bexpr → bexpr or bterm | bterm 
 bterm → bterm and bfactor | bfactor 
 bfactor → not bfactor | ( bexpr ) | true | false 
 说明：bexpr, bterm, 和 bfactor为非终结符，其它符号为终结符。
+好的，我们将为以下文法构造SLR(1)语法分析表，并画出对应的LR(0)自动机：
+
+```
+bexpr   → bexpr or bterm | bterm
+bterm   → bterm and bfactor | bfactor
+bfactor → not bfactor | ( bexpr ) | true | false
+```
+
+**说明**：`bexpr`、`bterm`、`bfactor`为非终结符，其它符号为终结符。
+
+---
+
+## 步骤概述
+
+1. **文法增广**：引入新的开始符号 `S'`，得到增广文法。
+2. **构造LR(0)项目集族**：计算所有可能的LR(0)项目集（状态）及其转移。
+3. **计算FOLLOW集合**：为非终结符计算FOLLOW集合。
+4. **构造SLR(1)语法分析表**：基于项目集族和FOLLOW集合构造Action和Goto表。
+5. **绘制LR(0)自动机**：根据项目集和转移绘制自动机。
+
+---
+
+## 1. 文法增广
+
+增广文法如下：
+
+```
+1. S'     → bexpr
+2. bexpr  → bexpr or bterm
+3. bexpr  → bterm
+4. bterm  → bterm and bfactor
+5. bterm  → bfactor
+6. bfactor→ not bfactor
+7. bfactor→ ( bexpr )
+8. bfactor→ true
+9. bfactor→ false
+```
+
+---
+
+## 2. 构造LR(0)项目集族
+
+### 2.1 列出所有可能的LR(0)项目
+
+**产生式及其项目**：
+
+1. **S' → bexpr**
+
+   - `S' → • bexpr`
+   - `S' → bexpr •`
+
+2. **bexpr → bexpr or bterm**
+
+   - `bexpr → • bexpr or bterm`
+   - `bexpr → bexpr • or bterm`
+   - `bexpr → bexpr or • bterm`
+   - `bexpr → bexpr or bterm •`
+
+3. **bexpr → bterm**
+
+   - `bexpr → • bterm`
+   - `bexpr → bterm •`
+
+4. **bterm → bterm and bfactor**
+
+   - `bterm → • bterm and bfactor`
+   - `bterm → bterm • and bfactor`
+   - `bterm → bterm and • bfactor`
+   - `bterm → bterm and bfactor •`
+
+5. **bterm → bfactor**
+
+   - `bterm → • bfactor`
+   - `bterm → bfactor •`
+
+6. **bfactor → not bfactor**
+
+   - `bfactor → • not bfactor`
+   - `bfactor → not • bfactor`
+   - `bfactor → not bfactor •`
+
+7. **bfactor → ( bexpr )**
+
+   - `bfactor → • ( bexpr )`
+   - `bfactor → ( • bexpr )`
+   - `bfactor → ( bexpr • )`
+   - `bfactor → ( bexpr ) •`
+
+8. **bfactor → true**
+
+   - `bfactor → • true`
+   - `bfactor → true •`
+
+9. **bfactor → false**
+
+   - `bfactor → • false`
+   - `bfactor → false •`
+
+### 2.2 构造项目集和状态转移
+
+**I0**（初始状态）：
+
+```
+S'     → • bexpr
+bexpr  → • bexpr or bterm
+bexpr  → • bterm
+bterm  → • bterm and bfactor
+bterm  → • bfactor
+bfactor→ • not bfactor
+bfactor→ • ( bexpr )
+bfactor→ • true
+bfactor→ • false
+```
+
+**I0** 的转移：
+
+- **bexpr**：`GOTO(I0, bexpr) = I1`
+- **bterm**：`GOTO(I0, bterm) = I2`
+- **bfactor**：`GOTO(I0, bfactor) = I3`
+- **not**：`GOTO(I0, not) = I4`
+- **(**：`GOTO(I0, () = I5`
+- **true**：`GOTO(I0, true) = I6`
+- **false**：`GOTO(I0, false) = I7`
+
+---
+
+**I1**：
+
+```
+S'     → bexpr •
+bexpr  → bexpr • or bterm
+```
+
+转移：
+
+- **or**：`GOTO(I1, or) = I8`
+- **$**：接受（`acc`）
+
+---
+
+**I2**：
+
+```
+bexpr  → bterm •
+bterm  → bterm • and bfactor
+```
+
+转移：
+
+- **and**：`GOTO(I2, and) = I9`
+
+---
+
+**I3**：
+
+```
+bterm  → bfactor •
+```
+
+---
+
+**I4**：
+
+```
+bfactor→ not • bfactor
+bfactor→ • not bfactor
+bfactor→ • ( bexpr )
+bfactor→ • true
+bfactor→ • false
+```
+
+转移：
+
+- **bfactor**：`GOTO(I4, bfactor) = I10`
+- **not**：`GOTO(I4, not) = I4`
+- **(**：`GOTO(I4, () = I5`
+- **true**：`GOTO(I4, true) = I6`
+- **false**：`GOTO(I4, false) = I7`
+
+---
+
+**I5**：
+
+```
+bfactor→ ( • bexpr )
+bexpr  → • bexpr or bterm
+bexpr  → • bterm
+bterm  → • bterm and bfactor
+bterm  → • bfactor
+bfactor→ • not bfactor
+bfactor→ • ( bexpr )
+bfactor→ • true
+bfactor→ • false
+```
+
+转移：
+
+- **bexpr**：`GOTO(I5, bexpr) = I11`
+- **bterm**：`GOTO(I5, bterm) = I2`
+- **bfactor**：`GOTO(I5, bfactor) = I3`
+- **not**：`GOTO(I5, not) = I4`
+- **(**：`GOTO(I5, () = I5`
+- **true**：`GOTO(I5, true) = I6`
+- **false**：`GOTO(I5, false) = I7`
+
+---
+
+**I6**：
+
+```
+bfactor→ true •
+```
+
+---
+
+**I7**：
+
+```
+bfactor→ false •
+```
+
+---
+
+**I8**：
+
+```
+bexpr  → bexpr or • bterm
+bterm  → • bterm and bfactor
+bterm  → • bfactor
+bfactor→ • not bfactor
+bfactor→ • ( bexpr )
+bfactor→ • true
+bfactor→ • false
+```
+
+转移：
+
+- **bterm**：`GOTO(I8, bterm) = I12`
+- **bfactor**：`GOTO(I8, bfactor) = I3`
+- **not**：`GOTO(I8, not) = I4`
+- **(**：`GOTO(I8, () = I5`
+- **true**：`GOTO(I8, true) = I6`
+- **false**：`GOTO(I8, false) = I7`
+
+---
+
+**I9**：
+
+```
+bterm  → bterm and • bfactor
+bfactor→ • not bfactor
+bfactor→ • ( bexpr )
+bfactor→ • true
+bfactor→ • false
+```
+
+转移：
+
+- **bfactor**：`GOTO(I9, bfactor) = I13`
+- **not**：`GOTO(I9, not) = I4`
+- **(**：`GOTO(I9, () = I5`
+- **true**：`GOTO(I9, true) = I6`
+- **false**：`GOTO(I9, false) = I7`
+
+---
+
+**I10**：
+
+```
+bfactor→ not bfactor •
+```
+
+---
+
+**I11**：
+
+```
+bfactor→ ( bexpr • )
+bexpr  → bexpr • or bterm
+```
+
+转移：
+
+- **or**：`GOTO(I11, or) = I8`
+- **)**：`GOTO(I11, )) = I14`
+
+---
+
+**I12**：
+
+```
+bexpr  → bexpr or bterm •
+bterm  → bterm • and bfactor
+```
+
+转移：
+
+- **and**：`GOTO(I12, and) = I9`
+
+---
+
+**I13**：
+
+```
+bterm  → bterm and bfactor •
+```
+
+---
+
+**I14**：
+
+```
+bfactor→ ( bexpr ) •
+```
+
+---
+
+### 2.3 项目集总览
+
+| 状态 | 项目集内容                                                            |
+| ---- | --------------------------------------------------------------------- |
+| I0   | 初始状态，包含增广文法的开始项目及所有可能的初始项目。                |
+| I1   | `S' → bexpr •`，`bexpr → bexpr • or bterm`                            |
+| I2   | `bexpr → bterm •`，`bterm → bterm • and bfactor`                      |
+| I3   | `bterm → bfactor •`                                                   |
+| I4   | `bfactor → not • bfactor` 以及所有可能的 `bfactor` 的初始项目。       |
+| I5   | `bfactor → ( • bexpr )` 以及 `bexpr`、`bterm`、`bfactor` 的初始项目。 |
+| I6   | `bfactor → true •`                                                    |
+| I7   | `bfactor → false •`                                                   |
+| I8   | `bexpr → bexpr or • bterm` 以及 `bterm`、`bfactor` 的初始项目。       |
+| I9   | `bterm → bterm and • bfactor` 以及 `bfactor` 的初始项目。             |
+| I10  | `bfactor → not bfactor •`                                             |
+| I11  | `bfactor → ( bexpr • )`，`bexpr → bexpr • or bterm`                   |
+| I12  | `bexpr → bexpr or bterm •`，`bterm → bterm • and bfactor`             |
+| I13  | `bterm → bterm and bfactor •`                                         |
+| I14  | `bfactor → ( bexpr ) •`                                               |
+
+---
+
+## 3. 计算FOLLOW集合
+
+**FIRST集合**：
+
+- `FIRST(bfactor) = { not, (, true, false }`
+- `FIRST(bterm) = FIRST(bfactor) = { not, (, true, false }`
+- `FIRST(bexpr) = FIRST(bterm) = { not, (, true, false }`
+
+**FOLLOW集合**：
+
+1. **FOLLOW(S')** = { `$` }
+
+2. **FOLLOW(bexpr)**：
+
+   - 在 `S' → bexpr` 中，`FOLLOW(bexpr)` += `FOLLOW(S')` = { `$` }
+   - 在 `bfactor → ( bexpr )` 中，`FOLLOW(bexpr)` += { `)` }
+   - 在 `bexpr → bexpr or bterm` 中，`bexpr` 被 `or` 跟随，`FOLLOW(bexpr)` += { `or` }
+
+   **所以**，`FOLLOW(bexpr) = { or, ), $ }`
+
+3. **FOLLOW(bterm)**：
+
+   - 在 `bexpr → bexpr or bterm` 中，`FOLLOW(bterm)` += `FOLLOW(bexpr)` = { or, ), $ }
+   - 在 `bterm → bterm and bfactor` 中，`bterm` 被 `and` 跟随，`FOLLOW(bterm)` += { `and` }
+
+   **所以**，`FOLLOW(bterm) = { and, or, ), $ }`
+
+4. **FOLLOW(bfactor)**：
+
+   - 在 `bterm → bterm and bfactor` 中，`FOLLOW(bfactor)` += `FOLLOW(bterm)` = { and, or, ), $ }
+
+   **所以**，`FOLLOW(bfactor) = { and, or, ), $ }`
+
+---
+
+## 4. 构造SLR(1)语法分析表
+
+### 4.1 Action表和Goto表
+
+#### 状态和项目集映射
+
+| 状态 | 项目集编号 |
+| ---- | ---------- |
+| 0    | I0         |
+| 1    | I1         |
+| 2    | I2         |
+| 3    | I3         |
+| 4    | I4         |
+| 5    | I5         |
+| 6    | I6         |
+| 7    | I7         |
+| 8    | I8         |
+| 9    | I9         |
+| 10   | I10        |
+| 11   | I11        |
+| 12   | I12        |
+| 13   | I13        |
+| 14   | I14        |
+
+#### 构造分析表
+
+**终结符**：`or`，`and`，`not`，`(`，`)`，`true`，`false`，`$`
+
+**非终结符**：`bexpr`，`bterm`，`bfactor`
+
+| 状态 | `or`   | `and`  | `not`  | `(`    | `)`     | `true` | `false` | `$`     | `bexpr` | `bterm` | `bfactor` |
+| ---- | ------ | ------ | ------ | ------ | ------- | ------ | ------- | ------- | ------- | ------- | --------- |
+| 0    |        |        | **s4** | **s5** |         | **s6** | **s7**  |         | **1**   | **2**   | **3**     |
+| 1    | **s8** |        |        |        |         |        |         | **acc** |         |         |           |
+| 2    | **r3** | **s9** |        |        | **r3**  |        |         | **r3**  |         |         |           |
+| 3    | **r5** | **r5** |        |        | **r5**  |        |         | **r5**  |         |         |           |
+| 4    |        |        | **s4** | **s5** |         | **s6** | **s7**  |         |         |         | **10**    |
+| 5    |        |        | **s4** | **s5** |         | **s6** | **s7**  |         | **11**  | **2**   | **3**     |
+| 6    | **r8** | **r8** |        |        | **r8**  |        |         | **r8**  |         |         |           |
+| 7    | **r9** | **r9** |        |        | **r9**  |        |         | **r9**  |         |         |           |
+| 8    |        |        | **s4** | **s5** |         | **s6** | **s7**  |         |         | **12**  | **3**     |
+| 9    |        |        | **s4** | **s5** |         | **s6** | **s7**  |         |         |         | **13**    |
+| 10   | **r6** | **r6** |        |        | **r6**  |        |         | **r6**  |         |         |           |
+| 11   | **s8** |        |        |        | **s14** |        |         |         |         |         |           |
+| 12   | **r2** | **s9** |        |        | **r2**  |        |         | **r2**  |         |         |           |
+| 13   | **r4** | **r4** |        |        | **r4**  |        |         | **r4**  |         |         |           |
+| 14   | **r7** | **r7** |        |        | **r7**  |        |         | **r7**  |         |         |           |
+
+**说明**：
+
+- **sX**：表示移进（shift）到状态X。
+- **rX**：表示按照产生式X进行规约。
+- **acc**：表示接受输入。
+- **空白**：表示错误或无动作。
+
+#### 产生式编号
+
+1. `S'     → bexpr`
+2. `bexpr  → bexpr or bterm`
+3. `bexpr  → bterm`
+4. `bterm  → bterm and bfactor`
+5. `bterm  → bfactor`
+6. `bfactor→ not bfactor`
+7. `bfactor→ ( bexpr )`
+8. `bfactor→ true`
+9. `bfactor→ false`
+
+---
+
+## 5. 绘制LR(0)自动机
+
+由于文本格式限制，我们以状态转换表的形式展示LR(0)自动机：
+
+### 状态转换表
+
+| 当前状态 | 输入符号  | 下一个状态 |
+| -------- | --------- | ---------- |
+| 0        | `not`     | 4          |
+| 0        | `(`       | 5          |
+| 0        | `true`    | 6          |
+| 0        | `false`   | 7          |
+| 0        | `bexpr`   | 1          |
+| 0        | `bterm`   | 2          |
+| 0        | `bfactor` | 3          |
+| 1        | `or`      | 8          |
+| 1        | `$`       | acc        |
+| 2        | `and`     | 9          |
+| 4        | `not`     | 4          |
+| 4        | `(`       | 5          |
+| 4        | `true`    | 6          |
+| 4        | `false`   | 7          |
+| 4        | `bfactor` | 10         |
+| 5        | `not`     | 4          |
+| 5        | `(`       | 5          |
+| 5        | `true`    | 6          |
+| 5        | `false`   | 7          |
+| 5        | `bexpr`   | 11         |
+| 5        | `bterm`   | 2          |
+| 5        | `bfactor` | 3          |
+| 8        | `not`     | 4          |
+| 8        | `(`       | 5          |
+| 8        | `true`    | 6          |
+| 8        | `false`   | 7          |
+| 8        | `bterm`   | 12         |
+| 8        | `bfactor` | 3          |
+| 9        | `not`     | 4          |
+| 9        | `(`       | 5          |
+| 9        | `true`    | 6          |
+| 9        | `false`   | 7          |
+| 9        | `bfactor` | 13         |
+| 11       | `or`      | 8          |
+| 11       | `)`       | 14         |
+
+### 状态描述
+
+- **状态0**：初始状态，包含所有可能的开始项目。
+- **状态1**：匹配到 `bexpr` 后的状态，可接受输入或继续处理 `or`。
+- **状态2**：匹配到 `bterm` 后的状态，可规约为 `bexpr` 或继续处理 `and`。
+- **状态3**：匹配到 `bfactor` 后的状态，可规约为 `bterm`。
+- **状态4**：处理 `not` 运算符的状态，继续解析 `bfactor`。
+- **状态5**：处理左括号 `(`，进入新的 `bexpr` 解析。
+- **状态6**：匹配到 `true` 后的状态，可规约为 `bfactor`。
+- **状态7**：匹配到 `false` 后的状态，可规约为 `bfactor`。
+- **状态8**：处理 `or` 运算符后的状态，解析新的 `bterm`。
+- **状态9**：处理 `and` 运算符后的状态，解析新的 `bfactor`。
+- **状态10**：匹配到 `not bfactor` 后的状态，可规约为 `bfactor`。
+- **状态11**：处理括号内的 `bexpr`，可处理 `or` 或右括号 `)`。
+- **状态12**：匹配到 `bexpr or bterm` 后的状态，可规约为 `bexpr`。
+- **状态13**：匹配到 `bterm and bfactor` 后的状态，可规约为 `bterm`。
+- **状态14**：匹配到 `( bexpr )` 后的状态，可规约为 `bfactor`。
+
+---
+
+## 6. 结论
+
+我们成功地为给定的布尔表达式文法构造了SLR(1)语法分析表，并绘制了对应的LR(0)自动机。
+
+- **SLR(1)语法分析表**：包含了所有可能的移进、规约和接受动作，确保解析器能够正确地分析符合文法的输入串。
+- **LR(0)自动机**：展示了解析过程中可能的状态转换，帮助理解解析器如何从初始状态通过各种输入符号转移到接受状态。
+
+通过上述步骤，解析器可以有效地解析布尔表达式，包括使用 `and`、`or`、`not`、括号以及布尔常量 `true` 和 `false` 构成的复杂表达式。
